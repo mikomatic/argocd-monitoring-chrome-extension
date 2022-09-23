@@ -1,8 +1,7 @@
 import React, {useState} from 'react';
 import './Options.css';
 import Header from './Header';
-import GitlabSettings from "./GitlabSettings";
-import GitlabProjects from "./GitlabProjects";
+import ArgoEnvironments from "./ArgoConfiguration";
 
 interface Props {
   title: string;
@@ -10,26 +9,6 @@ interface Props {
 
 const Options: React.FC<Props> = ({title}: Props) => {
 
-  let [showGitlabSettings, setShowGitlabSettings] = useState(true);
-  const gitlabSettingsContent = () => {
-    if (showGitlabSettings) {
-      return <GitlabSettings/>
-    }
-  }
-
-  const gitlabProjectsContent = () => {
-    if (!showGitlabSettings) {
-      return <GitlabProjects/>
-    }
-  }
-
-  function projectClickHandler() {
-    setShowGitlabSettings(false);
-  }
-
-  function gitlabSettingsHandler() {
-    setShowGitlabSettings(true);
-  }
 
   return <div>
     <Header/>
@@ -41,20 +20,18 @@ const Options: React.FC<Props> = ({title}: Props) => {
               General
             </p>
             <ul className="menu-list">
-              <li onClick={gitlabSettingsHandler}><a className={showGitlabSettings ? "is-active" : ""}>Gitlab
-                Settings</a></li>
-              <li onClick={projectClickHandler}><a className={!showGitlabSettings ? "is-active" : ""}>Projects</a></li>
+              <li><a
+                  className={"is-active"}>Environments</a></li>
             </ul>
           </aside>
         </div>
         <div className="column">
-          {gitlabSettingsContent()}
-          {gitlabProjectsContent()}
+          <ArgoEnvironments/>
         </div>
       </div>
     </div>
   </div>
-    ;
+      ;
 };
 
 export default Options;

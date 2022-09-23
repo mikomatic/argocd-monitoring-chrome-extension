@@ -5,7 +5,7 @@ const Header: React.FC = () => {
     <div className="container">
       <div className="navbar-brand">
         <span className="navbar-item brand-text">
-          Gitlab Extension
+          Argo CD Monitoring Extension
         </span>
       </div>
     </div>

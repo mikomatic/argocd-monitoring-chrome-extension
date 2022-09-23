@@ -1,20 +1,29 @@
 'use strict';
 
 import {Gitlab} from '@gitbeaker/browser';
-import {GitlabConfiguration} from "./model";
+import {ArgoEnvironmentConfiguration, GitlabConfiguration} from "../Model/model";
 
-
+let argoEnvironmentConfiguration: ArgoEnvironmentConfiguration;
 chrome.runtime.onInstalled.addListener(() => {
   console.log("onInstalled...");
 
   // create alarm after extension is installed / upgraded
-  chrome.alarms.create("refreshGitlabStatus", {periodInMinutes: 1});
-  loadConfThenRefreshGitlabStatus();
+  chrome.alarms.create("refreshArgoCD", {periodInMinutes: 1});
+  loadConfiguration()
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  loadConfThenRefreshGitlabStatus();
+  loadConfiguration()
 });
+
+function loadConfiguration() {
+  chrome.storage.local.get(['argoEnvironmentConfiguration'], function (result: any) {
+    if (result) {
+      console.log("loading storage: " + result)
+      argoEnvironmentConfiguration = result.argoEnvironmentConfiguration as ArgoEnvironmentConfiguration;
+    }
+  });
+}
 
 function loadConfThenRefreshGitlabStatus() {
   chrome.storage.local.get(['configuration'], function (result: any) {
@@ -104,13 +113,13 @@ async function refreshGitlabStatus(configuration: GitlabConfiguration) {
   });
 
   chrome.action.setIcon(
-    {
-      path: {
-        "16": `/icons/${globalStatus}/icon_16.png`,
-        "32": `/icons/${globalStatus}/icon_32.png`,
-        "48": `/icons/${globalStatus}/icon_48.png`,
-        "128": `/icons/${globalStatus}/icon_128.png`
+      {
+        path: {
+          "16": `/icons/${globalStatus}/icon_16.png`,
+          "32": `/icons/${globalStatus}/icon_32.png`,
+          "48": `/icons/${globalStatus}/icon_48.png`,
+          "128": `/icons/${globalStatus}/icon_128.png`
+        }
       }
-    }
   )
 };
