@@ -1,6 +1,26 @@
-import React from 'react';
+import React, {useState} from 'react';
 import logo from '../../assets/img/logo.svg';
 import './Popup.css';
+import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
+import {ArgoEnvironment} from "../Model/model";
+import {IApplication} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1/Application";
+
+const apps: Application[] = [{
+  kind: "Application",
+  apiVersion: "argoproj.io/v1alpha1",
+
+  spec: {destination: {}, project: "po", source: {repoURL: "repoUrl"}},
+  metadata: {name: "app name"},
+  status: {
+    health: {status: "healthy"},
+    sync: {status: "synced"},
+  },
+  toJSON(): any {
+  },
+  validate() {
+  }
+}];
+
 
 const Popup = () => {
   return (
@@ -19,14 +39,6 @@ const Popup = () => {
           <a>Sources</a>
           <a>Forks</a>
         </p>
-        <div className="panel-block">
-          <p className="control has-icons-left">
-            <input className="input is-info" type="text" placeholder="Search"/>
-            <span className="icon is-left">
-      <i className="material-icons">search</i>
-      </span>
-          </p>
-        </div>
         <a className="panel-block is-active">
     <span className="panel-icon">
       <i className="fas fa-book" aria-hidden="true"></i>
@@ -44,12 +56,6 @@ const Popup = () => {
       <i className="fas fa-book" aria-hidden="true"></i>
     </span>
           minireset.css
-        </a>
-        <a className="panel-block">
-    <span className="panel-icon">
-      <i className="fas fa-book" aria-hidden="true"></i>
-    </span>
-          jgthms.github.io
         </a>
       </article>
     </div>
