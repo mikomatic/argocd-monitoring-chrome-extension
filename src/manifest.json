@@ -8,10 +8,10 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon-34.png"
+    "default_icon": "icon-32.png"
   },
   "icons": {
-    "128": "icon-128.png"
+    "128": "icon-144.png"
   },
   "content_scripts": [
     {

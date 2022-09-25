@@ -10,8 +10,8 @@ const ArgoConfiguration: React.FC = () => {
 
   useEffect(() => {
     chrome.storage.local.get(['argoEnvironmentConfiguration'], function (result: any) {
-      if (result) {
-        console.log("loading storage: " + result)
+      if (result && result.argoEnvironmentConfiguration) {
+        console.log("loading storage: " + JSON.stringify(result))
         let configuration = result.argoEnvironmentConfiguration as ArgoEnvironmentConfiguration;
         setEnvironments(configuration.environments);
 
@@ -23,9 +23,12 @@ const ArgoConfiguration: React.FC = () => {
             "Authorization": "Bearer " + argoEnvironment.token
           }
         })
-        .then(response => response.json())
-        .then(json => console.log(json))
-        .catch(err => console.log(err));
+          .then(response => response.json())
+          .then(json => console.log(json))
+          .catch(err => console.log(err));
+      } else {
+        console.log("No stored configuration");
+
       }
     });
   }, []);
@@ -49,10 +52,10 @@ const ArgoConfiguration: React.FC = () => {
         "Authorization": "Bearer " + token
       }
     })
-    .catch(err => {
-      console.log(err);
-      return {status: 400}
-    });
+      .catch(err => {
+        console.log(err);
+        return {status: 400}
+      });
     setEnvironments((prevState: ArgoEnvironment[]) => {
       let newEnvs = [...prevState, {
         name: name,
@@ -81,8 +84,8 @@ const ArgoConfiguration: React.FC = () => {
 
   const showStatus = (status: GlobalStatus) => {
     return status === GlobalStatus.ok ? <span className="tag is-success">Ok</span>
-        :
-        <span className="tag is-danger">KO</span>
+      :
+      <span className="tag is-danger">KO</span>
   }
 
   const rows = () => {
@@ -92,7 +95,7 @@ const ArgoConfiguration: React.FC = () => {
         <th>{p.basePath} {showStatus(p.status)}</th>
         <td>
           <button className="button is-warning" onClick={() => deleteEnv(p)}><i
-              className="material-icons">delete</i>Remove
+            className="material-icons">delete</i>Remove
           </button>
         </td>
       </tr>

@@ -1,40 +1,56 @@
 'use strict';
 
-import {Gitlab} from '@gitbeaker/browser';
 import {ArgoEnvironmentConfiguration, GitlabConfiguration} from "../Model/model";
 
 let argoEnvironmentConfiguration: ArgoEnvironmentConfiguration;
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log("onInstalled...");
 
   // create alarm after extension is installed / upgraded
   chrome.alarms.create("refreshArgoCD", {periodInMinutes: 1});
   loadConfiguration()
+  refreshApplicationsState()
 });
+
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   loadConfiguration()
+  refreshApplicationsState();
 });
+
+function refreshApplicationsState() {
+  if (argoEnvironmentConfiguration) {
+    argoEnvironmentConfiguration.environments?.forEach(argoEnv => {
+
+      console.log(`background - Updating argo env ${argoEnv.name}`)
+      fetch(argoEnv.basePath + "/api/v1/applications", {
+        method: "GET",
+        headers: {
+          "Content-type": "application/json;charset=UTF-8",
+          "Authorization": "Bearer " + argoEnv.token
+        }
+      })
+        .then(response => response.json())
+        .then(json => console.log(json))
+        .catch(err => console.log(err));
+    });
+  } else {
+    console.log("No configuration");
+  }
+}
 
 function loadConfiguration() {
   chrome.storage.local.get(['argoEnvironmentConfiguration'], function (result: any) {
     if (result) {
-      console.log("loading storage: " + result)
+      console.log("background - loading storage: " + JSON.stringify(result))
       argoEnvironmentConfiguration = result.argoEnvironmentConfiguration as ArgoEnvironmentConfiguration;
     }
   });
 }
 
-function loadConfThenRefreshGitlabStatus() {
-  chrome.storage.local.get(['configuration'], function (result: any) {
-    if (!result) {
-      console.debug('no storage');
-      return;
-    }
-    refreshGitlabStatus(<GitlabConfiguration>result.configuration);
-  });
-}
 
+/*
 async function refreshGitlabStatus(configuration: GitlabConfiguration) {
 
   if (!configuration) {
@@ -113,13 +129,13 @@ async function refreshGitlabStatus(configuration: GitlabConfiguration) {
   });
 
   chrome.action.setIcon(
-      {
-        path: {
-          "16": `/icons/${globalStatus}/icon_16.png`,
-          "32": `/icons/${globalStatus}/icon_32.png`,
-          "48": `/icons/${globalStatus}/icon_48.png`,
-          "128": `/icons/${globalStatus}/icon_128.png`
-        }
+    {
+      path: {
+        "16": `/icons/${globalStatus}/icon_16.png`,
+        "32": `/icons/${globalStatus}/icon_32.png`,
+        "48": `/icons/${globalStatus}/icon_48.png`,
+        "128": `/icons/${globalStatus}/icon_128.png`
       }
+    }
   )
-};
+};*/
