@@ -1,6 +1,8 @@
-'use strict';
-
-import {ArgoEnvironmentConfiguration, GitlabConfiguration} from "../Model/model";
+import {
+  ApplicationsForEnv, ArgoEnvironmentConfiguration
+} from "../Model/model";
+import fetchApplication from "../Utils/fetchUtils";
+import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
 
 let argoEnvironmentConfiguration: ArgoEnvironmentConfiguration;
 
@@ -10,34 +12,40 @@ chrome.runtime.onInstalled.addListener(() => {
   // create alarm after extension is installed / upgraded
   chrome.alarms.create("refreshArgoCD", {periodInMinutes: 1});
   loadConfiguration()
-  refreshApplicationsState()
 });
 
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async () => {
   loadConfiguration()
-  refreshApplicationsState();
+  await refreshApplicationsState();
 });
 
-function refreshApplicationsState() {
+async function refreshApplicationsState() {
   if (argoEnvironmentConfiguration) {
-    argoEnvironmentConfiguration.environments?.forEach(argoEnv => {
 
-      console.log(`background - Updating argo env ${argoEnv.name}`)
-      fetch(argoEnv.basePath + "/api/v1/applications", {
-        method: "GET",
-        headers: {
-          "Content-type": "application/json;charset=UTF-8",
-          "Authorization": "Bearer " + argoEnv.token
-        }
-      })
-        .then(response => response.json())
-        .then(json => console.log(json))
-        .catch(err => console.log(err));
-    });
+    let applicationStatus: ApplicationsForEnv[] = [];
+    for (const argoEnv of argoEnvironmentConfiguration.environments) {
+
+      await fetchApplication(argoEnv).then((applications: Application[]) => {
+        console.log("Updating apps status for env " + argoEnv.name);
+        applicationStatus.push({environment: argoEnv.name, apps: applications})
+      }).catch(err => console.log(err));
+
+
+      saveArgoAppsStatusLocalStorage(applicationStatus);
+    }
   } else {
     console.log("No configuration");
   }
+}
+
+function saveArgoAppsStatusLocalStorage(updatedApps: ApplicationsForEnv[]) {
+  chrome.storage.local.set({'argoApplications': updatedApps}, function () {
+    if (chrome.runtime.lastError)
+      console.debug('Error setting application status to local storage');
+
+    console.debug("Argo Aplications status storage saved!: " + JSON.stringify(updatedApps));
+  });
 }
 
 function loadConfiguration() {
