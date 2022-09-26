@@ -80,12 +80,12 @@ const ArgoConfiguration: React.FC = () => {
   }
 
   const rows = () => {
-    return environments.map(p => {
-      return <tr>
-        <td>{p.name}</td>
-        <th>{p.basePath} {showStatus(p.status)}</th>
+    return environments.map(env => {
+      return <tr key={env.name}>
+        <td>{env.name}</td>
+        <th>{env.basePath} {showStatus(env.status)}</th>
         <td>
-          <button className="button is-warning" onClick={() => deleteEnv(p)}><i
+          <button className="button is-warning" onClick={() => deleteEnv(env)}><i
               className="material-icons">delete</i>Remove
           </button>
         </td>

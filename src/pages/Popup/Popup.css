@@ -2,6 +2,7 @@
   text-align: center;
   height: 100%;
   padding: 10px;
+  min-width: 450px;
 }
 
 .panel-heading {

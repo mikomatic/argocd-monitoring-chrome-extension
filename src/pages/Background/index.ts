@@ -10,7 +10,7 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("onInstalled...");
 
   // create alarm after extension is installed / upgraded
-  chrome.alarms.create("refreshArgoCD", {periodInMinutes: 1});
+  chrome.alarms.create("refreshArgoCD", {periodInMinutes: 0.5});
   loadConfiguration()
 });
 
@@ -30,7 +30,6 @@ async function refreshApplicationsState() {
         console.log("Updating apps status for env " + argoEnv.name);
         applicationStatus.push({environment: argoEnv.name, apps: applications})
       }).catch(err => console.log(err));
-
 
       saveArgoAppsStatusLocalStorage(applicationStatus);
     }
