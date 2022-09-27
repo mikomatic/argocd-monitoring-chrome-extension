@@ -3,6 +3,7 @@
   height: 100%;
   padding: 10px;
   min-width: 450px;
+  min-height: 250px;
 }
 
 .panel-heading {

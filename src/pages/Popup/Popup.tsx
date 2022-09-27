@@ -7,7 +7,7 @@ import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
 const Popup = () => {
 
   const [argoApplications, setArgoApplications] = useState<ApplicationsForEnv[]>([]);
-  const [currentTab, setCurrentTab] = useState<string>("");
+  const [currentEnv, setCurrentEnv] = useState<ApplicationsForEnv>();
 
   useEffect(() => {
     chrome.storage.local.get(['argoApplications'], function (result: any) {
@@ -16,8 +16,7 @@ const Popup = () => {
         let argoApplications = result.argoApplications as ApplicationsForEnv[];
 
         setArgoApplications(argoApplications);
-        let environment = argoApplications[0]?.environment;
-        setCurrentTab(environment)
+        setCurrentEnv(argoApplications[0])
       } else {
         console.log("No stored configuration");
       }
@@ -26,51 +25,54 @@ const Popup = () => {
 
   const tabs = () => {
     return argoApplications.map(argoApps => {
-      let envName = argoApps.environment;
-      return <a key={envName} className={currentTab === envName ? "is-active" : ""}
-                onClick={() => setCurrentTab(envName)}>{envName}</a>
+      let envName = argoApps.name;
+      return <a key={envName} className={currentEnv?.name === envName ? "is-active" : ""}
+                onClick={() => setCurrentEnv(argoApps)}>{envName}</a>
     });
   };
 
   const apps = () => {
-    return argoApplications.filter(argoApps => argoApps.environment === currentTab)
-      .flatMap(argoApplications => argoApplications.apps)
-      .map((application: Application) => {
-        return <a key={application.metadata.name} className="panel-block is-active">
-          <div className="columns is-mobile" style={{width: "100%"}}>
-            <div className="column is-half">
-              {application.metadata.name}
-            </div>
-            <div className="column">
+    return argoApplications.filter(argoApps => argoApps.name === currentEnv?.name)
+    .flatMap(argoApplications => argoApplications.apps)
+    .map((application: Application) => {
+      return <a
+          href={currentEnv?.basePath + "/applications/" + application.metadata.name}
+          target="_blank"
+          key={application.metadata.name} className="panel-block is-active">
+        <div className="columns is-mobile" style={{width: "100%"}}>
+          <div className="column is-half">
+            {application.metadata.name}
+          </div>
+          <div className="column">
               <span className="icon" color="red"><i
-                className="material-icons">favorite</i>
+                  className="material-icons">favorite</i>
                 {application.status?.health?.status}</span>
 
-            </div>
-            <div className="column">
-              {application.status?.sync?.status}
-            </div>
           </div>
-        </a>
-      });
+          <div className="column">
+            {application.status?.sync?.status}
+          </div>
+        </div>
+      </a>
+    });
   };
 
 
   return (
-    <div className="App">
-      <header>
-        <img src={logo} className="App-logo" alt="logo"/>
-      </header>
-      <article className="panel is-info">
-        <p className="panel-heading">
-          ArgoCD Monitoring
-        </p>
-        <p className="panel-tabs">
-          {tabs()}
-        </p>
-        {apps()}
-      </article>
-    </div>
+      <div className="App">
+        <header>
+          <img src={logo} className="App-logo" alt="logo"/>
+        </header>
+        <article className="panel is-info">
+          <p className="panel-heading">
+            ArgoCD Monitoring
+          </p>
+          <p className="panel-tabs">
+            {tabs()}
+          </p>
+          {apps()}
+        </article>
+      </div>
   );
 };
 

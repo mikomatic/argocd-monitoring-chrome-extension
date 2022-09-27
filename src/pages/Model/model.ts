@@ -1,18 +1,5 @@
 import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
 
-export interface GitlabConfiguration {
-  globalStatus?: "success" | "error" | "disconnected" | "none",
-  host?: string,
-  token?: string,
-  projects: GitlabProject[]
-}
-
-export interface GitlabProject {
-  project: string,
-  branch: string,
-  status: "success" | "error" | "disconnected" | "none"
-}
-
 export interface ArgoEnvironmentConfiguration {
   environments: ArgoEnvironment[]
 }
@@ -22,7 +9,8 @@ export class ApplicationsResponse {
 }
 
 export interface ApplicationsForEnv {
-  environment: string
+  name: string,
+  basePath: string,
   apps: Application[]
 }
 

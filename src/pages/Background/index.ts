@@ -28,7 +28,7 @@ async function refreshApplicationsState() {
 
       await fetchApplication(argoEnv).then((applications: Application[]) => {
         console.log("Updating apps status for env " + argoEnv.name);
-        applicationStatus.push({environment: argoEnv.name, apps: applications})
+        applicationStatus.push({name: argoEnv.name, basePath: argoEnv.basePath, apps: applications})
       }).catch(err => console.log(err));
 
       saveArgoAppsStatusLocalStorage(applicationStatus);
