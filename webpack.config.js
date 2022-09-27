@@ -188,12 +188,6 @@ var options = {
       chunks: ['popup'],
       cache: false,
     }),
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, 'src', 'pages', 'Panel', 'index.html'),
-      filename: 'panel.html',
-      chunks: ['panel'],
-      cache: false,
-    }),
   ],
   infrastructureLogging: {
     level: 'info',
