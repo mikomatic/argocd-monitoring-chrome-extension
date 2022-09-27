@@ -1,11 +1,9 @@
 import React, {useEffect, useState} from "react";
-import {ArgoEnvironment, ArgoEnvironmentConfiguration, GlobalStatus} from "../Model/model";
+import {ArgoEnvironment, ArgoEnvironmentConfiguration} from "../Model/model";
+import EnvForm from "./EnvForm";
 
 const ArgoConfiguration: React.FC = () => {
 
-  const [name, setName] = useState('');
-  const [baseUrl, setBaseUrl] = useState('');
-  const [token, setToken] = useState('');
   const [environments, setEnvironments] = useState<ArgoEnvironment[]>([]);
 
   useEffect(() => {
@@ -35,22 +33,12 @@ const ArgoConfiguration: React.FC = () => {
   }, [environments]);
 
 
-  const addEnvironmentHandler = async () => {
-
+  const addEnvironmentHandler = async (addedEnv: ArgoEnvironment) => {
     setEnvironments((prevState: ArgoEnvironment[]) => {
-      return [...prevState, {
-        name: name,
-        basePath: baseUrl,
-        token: token,
-        status: GlobalStatus.UNKNOWN
-      }];
+      return [...prevState,
+        addedEnv
+      ];
     })
-
-    setName('');
-    setBaseUrl('');
-    setToken('')
-
-
   };
 
   const deleteEnv = (argoEnv: ArgoEnvironment) => {
@@ -73,43 +61,9 @@ const ArgoConfiguration: React.FC = () => {
     });
   };
 
-  const basePathChangedHandler = (event: React.FormEvent<HTMLInputElement>) => {
-    setBaseUrl(event.currentTarget.value);
-  };
-
-  const tokenChangeHandler = (event: React.FormEvent<HTMLInputElement>) => {
-    setToken(event.currentTarget.value);
-  };
-
-  const nameChangedHandler = (event: React.FormEvent<HTMLInputElement>) => {
-    setName(event.currentTarget.value);
-  };
-
   return <div className="container columns">
     <div className="column">
-      <div className="field is-horizontal">
-        <div className="field-body">
-          <div className="field">
-            <p className="control">
-              <input className="input" type="text" value={name} placeholder="Name"
-                     onChange={nameChangedHandler}/>
-            </p>
-          </div>
-          <div className="field">
-            <p className="control">
-              <input className="input" type="text" value={baseUrl} placeholder="base url"
-                     onChange={basePathChangedHandler}/>
-            </p>
-          </div>
-          <div className="field">
-            <p className="control">
-              <input className="input" type="password" value={token} placeholder="token"
-                     onChange={tokenChangeHandler}/>
-            </p>
-          </div>
-          <button className="button is-info" onClick={addEnvironmentHandler}>Add</button>
-        </div>
-      </div>
+      <EnvForm onAddEnvironment={addEnvironmentHandler}/>
       <div>
         <table className="table is-fullwidth">
           <thead>
