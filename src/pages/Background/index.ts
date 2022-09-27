@@ -9,13 +9,24 @@ chrome.runtime.onInstalled.addListener(() => {
 
   // create alarm after extension is installed / upgraded
   chrome.alarms.create("refreshArgoCD", {periodInMinutes: 0.5});
-  loadConfiguration()
+  loadConfiguration().then(async (result: any) => {
+    console.log("background - loaded config" + JSON.stringify(result));
+
+    argoEnvironmentConfiguration = result.argoEnvironmentConfiguration as ArgoEnvironmentConfiguration;
+
+    await refreshApplicationsState();
+  })
 });
 
 
 chrome.alarms.onAlarm.addListener(async () => {
-  loadConfiguration()
-  await refreshApplicationsState();
+  loadConfiguration().then(async (result: any) => {
+    console.log("background - loaded config" + JSON.stringify(result));
+
+    argoEnvironmentConfiguration = result.argoEnvironmentConfiguration as ArgoEnvironmentConfiguration;
+
+    await refreshApplicationsState();
+  })
 });
 
 async function refreshApplicationsState() {
@@ -59,12 +70,23 @@ function saveArgoAppsStatusLocalStorage(updatedApps: ApplicationsForEnv[]) {
   });
 }
 
+
+// Reads all data out of storage.sync and exposes it via a promise.
+//
+// Note: Once the Storage API gains promise support, this function
+// can be greatly simplified.
 function loadConfiguration() {
-  chrome.storage.local.get(['argoEnvironmentConfiguration'], function (result: any) {
-    if (result) {
-      console.log("background - loading storage: " + JSON.stringify(result))
-      argoEnvironmentConfiguration = result.argoEnvironmentConfiguration as ArgoEnvironmentConfiguration;
-    }
+  // Immediately return a promise and start asynchronous work
+  return new Promise((resolve, reject) => {
+    // Asynchronously fetch all data from storage.sync.
+    chrome.storage.local.get(['argoEnvironmentConfiguration'], (result) => {
+      // Pass any observed errors down the promise chain.
+      if (chrome.runtime.lastError) {
+        return reject(chrome.runtime.lastError);
+      }
+      // Pass the data retrieved from storage down the promise chain.
+      resolve(result);
+    });
   });
 }
 
