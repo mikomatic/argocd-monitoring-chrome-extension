@@ -1,6 +1,4 @@
-import {
-  ApplicationsForEnv, ArgoEnvironmentConfiguration
-} from "../Model/model";
+import {ApplicationsForEnv, ArgoEnvironmentConfiguration, GlobalStatus} from "../Model/model";
 import fetchApplication from "../Utils/fetchUtils";
 import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
 
@@ -24,12 +22,26 @@ async function refreshApplicationsState() {
   if (argoEnvironmentConfiguration) {
 
     let applicationStatus: ApplicationsForEnv[] = [];
-    for (const argoEnv of argoEnvironmentConfiguration.environments) {
 
+    for (const argoEnv of argoEnvironmentConfiguration.environments) {
       await fetchApplication(argoEnv).then((applications: Application[]) => {
-        console.log("Updating apps status for env " + argoEnv.name);
-        applicationStatus.push({name: argoEnv.name, basePath: argoEnv.basePath, apps: applications})
-      }).catch(err => console.log(err));
+        console.log("background - Updating apps status for env " + argoEnv.name);
+        applicationStatus.push({
+          name: argoEnv.name,
+          status: GlobalStatus.OK,
+          basePath: argoEnv.basePath,
+          apps: applications
+        })
+      }).catch(err => {
+
+        applicationStatus.push({
+          name: argoEnv.name,
+          status: GlobalStatus.KO,
+          basePath: argoEnv.basePath,
+          apps: []
+        })
+        console.log(err)
+      });
 
       saveArgoAppsStatusLocalStorage(applicationStatus);
     }
@@ -43,7 +55,7 @@ function saveArgoAppsStatusLocalStorage(updatedApps: ApplicationsForEnv[]) {
     if (chrome.runtime.lastError)
       console.debug('Error setting application status to local storage');
 
-    console.debug("Argo Aplications status storage saved!: " + JSON.stringify(updatedApps));
+    console.debug("background - Argo Aplications status storage saved!: " + JSON.stringify(updatedApps));
   });
 }
 

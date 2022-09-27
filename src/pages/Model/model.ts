@@ -11,6 +11,7 @@ export class ApplicationsResponse {
 export interface ApplicationsForEnv {
   name: string,
   basePath: string,
+  status: GlobalStatus,
   apps: Application[]
 }
 
@@ -18,16 +19,8 @@ export interface ArgoEnvironment {
   name: string,
   basePath: string,
   token: string,
-  status: GlobalStatus
 }
 
 export enum GlobalStatus {
-  ok, ko
-}
-
-export interface ArgoApp {
-  env: string,
-  name: string,
-  sync: string,
-  status: string
+  OK = "OK", KO = "KO", UNKNOWN = "UNKNOWN"
 }

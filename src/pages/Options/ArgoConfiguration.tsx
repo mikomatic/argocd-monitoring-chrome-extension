@@ -1,9 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {
-  ArgoEnvironment,
-  ArgoEnvironmentConfiguration,
-  GlobalStatus
-} from "../Model/model";
+import {ArgoEnvironment, ArgoEnvironmentConfiguration, GlobalStatus} from "../Model/model";
 
 const ArgoConfiguration: React.FC = () => {
 
@@ -24,38 +20,30 @@ const ArgoConfiguration: React.FC = () => {
     });
   }, []);
 
-  function saveArgoEnvConfToLocalStorage(newEnvs: ArgoEnvironment[]) {
-    const argoConf: ArgoEnvironmentConfiguration = {environments: newEnvs};
-    chrome.storage.local.set({'argoEnvironmentConfiguration': argoConf}, function () {
-      if (chrome.runtime.lastError)
-        console.debug('Error setting');
+  useEffect(() => {
+    function saveArgoEnvConfToLocalStorage(newEnvs: ArgoEnvironment[]) {
+      const argoConf: ArgoEnvironmentConfiguration = {environments: newEnvs};
+      chrome.storage.local.set({'argoEnvironmentConfiguration': argoConf}, function () {
+        if (chrome.runtime.lastError)
+          console.debug('Error setting');
 
-      console.debug("Configuration saved!: " + JSON.stringify(argoConf));
-    });
-  }
+        console.debug("Configuration saved!: " + JSON.stringify(argoConf));
+      });
+    }
+
+    saveArgoEnvConfToLocalStorage(environments)
+  }, [environments]);
+
 
   const addEnvironmentHandler = async () => {
 
-    const response = await fetch(baseUrl + "/api/v1/applications", {
-      method: "GET",
-      headers: {
-        "Content-type": "application/json;charset=UTF-8",
-        "Authorization": "Bearer " + token
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      return {status: 400}
-    });
     setEnvironments((prevState: ArgoEnvironment[]) => {
-      let newEnvs = [...prevState, {
+      return [...prevState, {
         name: name,
         basePath: baseUrl,
         token: token,
-        status: response.status === 200 ? GlobalStatus.ok : GlobalStatus.ko
+        status: GlobalStatus.UNKNOWN
       }];
-      saveArgoEnvConfToLocalStorage(newEnvs);
-      return newEnvs;
     })
 
     setName('');
@@ -67,26 +55,18 @@ const ArgoConfiguration: React.FC = () => {
 
   const deleteEnv = (argoEnv: ArgoEnvironment) => {
     setEnvironments((prevState) => {
-      let newEnvs = prevState.filter(p => p.name !== argoEnv.name);
-      saveArgoEnvConfToLocalStorage(newEnvs);
-      return newEnvs;
+      return prevState.filter(p => p.name !== argoEnv.name);
     })
   };
-
-  const showStatus = (status: GlobalStatus) => {
-    return status === GlobalStatus.ok ? <span className="tag is-success">Ok</span>
-        :
-        <span className="tag is-danger">KO</span>
-  }
 
   const rows = () => {
     return environments.map(env => {
       return <tr key={env.name}>
         <td>{env.name}</td>
-        <th>{env.basePath} {showStatus(env.status)}</th>
+        <th>{env.basePath}</th>
         <td>
           <button className="button is-warning" onClick={() => deleteEnv(env)}><i
-              className="material-icons">delete</i>Remove
+            className="material-icons">delete</i>Remove
           </button>
         </td>
       </tr>
