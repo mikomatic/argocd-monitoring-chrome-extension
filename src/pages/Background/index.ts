@@ -1,5 +1,9 @@
-import {ApplicationsForEnv, ArgoEnvironmentConfiguration, GlobalStatus} from "../Model/model";
-import fetchApplication from "../Utils/fetchUtils";
+import {
+  ApplicationsForEnv,
+  ApplicationsResponse,
+  ArgoEnvironmentConfiguration,
+  GlobalStatus
+} from "../Model/model";
 import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
 
 let argoEnvironmentConfiguration: ArgoEnvironmentConfiguration;
@@ -32,34 +36,136 @@ chrome.alarms.onAlarm.addListener(async () => {
 async function refreshApplicationsState() {
   if (argoEnvironmentConfiguration) {
 
-    let applicationStatus: ApplicationsForEnv[] = [];
+    let previousStatus = await loadArgoApplicationStatus().then(async (result: any) => {
+      if (result && result.argoApplications) {
+        let argoApplications = result.argoApplications as ApplicationsForEnv[];
+        return argoApplications;
+      }
+    });
 
+
+    let applicationStatus: ApplicationsForEnv[] = [];
     for (const argoEnv of argoEnvironmentConfiguration.environments) {
-      await fetchApplication(argoEnv).then((applications: Application[]) => {
+      await fetch(argoEnv.basePath + "/api/v1/applications", {
+        method: "GET",
+        headers: {
+          "Content-type": "application/json;charset=UTF-8",
+          "Authorization": "Bearer " + argoEnv.token
+        }
+      })
+      .then(response => {
+        return response.json()
+      })
+      .then((json: ApplicationsResponse) => {
         console.log("background - Updating apps status for env " + argoEnv.name);
+        console.log("background - Updating apps status for env " + JSON.stringify(json.items));
         applicationStatus.push({
           name: argoEnv.name,
           status: GlobalStatus.OK,
           basePath: argoEnv.basePath,
-          apps: applications
+          apps: json.items
         })
-      }).catch(err => {
+      }).catch((err) => {
+            console.log(err)
+            applicationStatus.push({
+              name: argoEnv.name,
+              status: GlobalStatus.KO,
+              basePath: argoEnv.basePath,
+              apps: []
+            })
+          }
+      )
 
-        applicationStatus.push({
-          name: argoEnv.name,
-          status: GlobalStatus.KO,
-          basePath: argoEnv.basePath,
-          apps: []
-        })
-        console.log(err)
-      });
-
-      saveArgoAppsStatusLocalStorage(applicationStatus);
     }
+
+    saveArgoAppsStatusLocalStorage(applicationStatus);
+    notifyBrowser(previousStatus ?? [], applicationStatus);
   } else {
     console.log("No configuration");
   }
 }
+
+
+function notifyBrowser(previousApplicationStatus: ApplicationsForEnv[], applicationStatus: ApplicationsForEnv[]) {
+
+
+  let previousStatus = calculateStatus(previousApplicationStatus);
+  let currentStatus = calculateStatus(applicationStatus);
+
+  let currentEnvStatus = currentStatus[0];
+  let currentAppsStatus = currentStatus[1];
+
+  console.log("previous status" + previousStatus)
+  console.log("current" + currentStatus)
+  if (currentEnvStatus !== GlobalStatus.OK || currentAppsStatus !== GlobalStatus.OK) {
+
+    chrome.action.setIcon(
+        {
+          path: {
+            "32": `icon-warning-32.png`
+          }
+        }
+    )
+
+    let previousEnvStatus = previousStatus[0];
+    if ((previousEnvStatus === GlobalStatus.OK || previousEnvStatus === GlobalStatus.UNKNOWN) && currentEnvStatus !== GlobalStatus.OK) {
+      chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL("/icon-144.png"),
+        title: 'ArgoCD Environment Status',
+        message: 'Impossible to contact some Argo Environments',
+        priority: 2
+      })
+    } else {
+      let previousAppStatus = previousStatus[1];
+      if ((previousAppStatus === GlobalStatus.OK || previousAppStatus === GlobalStatus.UNKNOWN) && currentAppsStatus !== GlobalStatus.OK) {
+        chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL("/icon-144.png"),
+          title: 'ArgoCD Applications Status',
+          message: 'Some applications require your attention',
+          priority: 2
+        })
+      }
+    }
+
+  } else {
+    chrome.action.setIcon(
+        {
+          path: {
+            "128": "icon-144.png",
+          }
+        }
+    )
+  }
+
+
+}
+const calculateStatus = (applicationStatus: ApplicationsForEnv[]) => {
+  let envStatus = GlobalStatus.UNKNOWN;
+  let appStatus = GlobalStatus.UNKNOWN;
+  for (const applicationsForEnv of applicationStatus) {
+    envStatus = applicationsForEnv.status;
+
+    if (applicationsForEnv.apps) {
+      let foundError: boolean = false;
+      for (const argoApp of applicationsForEnv.apps) {
+
+        if (argoApp.status?.health?.status !== "Healthy" || argoApp.status?.sync?.status !== "Synced") {
+          foundError = true;
+          break
+        }
+      }
+
+      if (foundError) {
+        appStatus = GlobalStatus.KO
+      } else {
+        appStatus = GlobalStatus.OK
+      }
+    }
+  }
+  return [envStatus, appStatus];
+};
 
 function saveArgoAppsStatusLocalStorage(updatedApps: ApplicationsForEnv[]) {
   chrome.storage.local.set({'argoApplications': updatedApps}, function () {
@@ -72,6 +178,26 @@ function saveArgoAppsStatusLocalStorage(updatedApps: ApplicationsForEnv[]) {
 
 
 // Reads all data out of storage.sync and exposes it via a promise.
+//
+// Note: Once the Storage API gains promise support, this function
+// can be greatly simplified.
+function loadArgoApplicationStatus() {
+  // Immediately return a promise and start asynchronous work
+  return new Promise((resolve, reject) => {
+    // Asynchronously fetch all data from storage.sync.
+    chrome.storage.local.get(['argoApplications'], (result) => {
+      // Pass any observed errors down the promise chain.
+      if (chrome.runtime.lastError) {
+        return reject(chrome.runtime.lastError);
+      }
+      // Pass the data retrieved from storage down the promise chain.
+      resolve(result);
+    });
+  });
+}
+
+
+// Reads all data out of storage.local and exposes it via a promise.
 //
 // Note: Once the Storage API gains promise support, this function
 // can be greatly simplified.
