@@ -23,6 +23,10 @@ const ArgoApplicationRow = ({currentEnv, currentApp}: Props) => {
       return <span className="icon" style={{color: "#12b886"}}><i
           className="material-icons">favorite</i>
         {status}</span>
+    } else if (status === "Progressing") {
+      return <span className="icon" style={{color: "#868e96"}}><i
+          className="material-icons">run_circle</i>
+        {status}</span>
     } else {
       return <span className="icon"><i
           className="material-icons">favorite</i>
