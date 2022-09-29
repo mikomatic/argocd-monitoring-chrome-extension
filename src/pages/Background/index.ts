@@ -126,7 +126,7 @@ function notifyBrowser(previousApplicationStatus: ApplicationsForEnv[], applicat
         })
       }
 
-      const newAppStatusPK = (previousAppStatus === GlobalStatus.KO || previousAppStatus === GlobalStatus.UNKNOWN) && currentAppsStatus === GlobalStatus.OK;
+      const newAppStatusPK = (previousAppStatus === GlobalStatus.KO || previousAppStatus === GlobalStatus.UNKNOWN) && (currentAppsStatus === GlobalStatus.OK && currentEnvStatus === GlobalStatus.OK);
       if (newAppStatusPK) {
         chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
           type: 'basic',
