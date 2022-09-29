@@ -1,6 +1,6 @@
 {
   "name": "argo-cd-monitoring-chrome-extension",
-  "version": "4.3.5",
+  "version": "0.0.2",
   "description": "ArgoCD Watcher - Chrome Extension To Monitor ArgoCD deployed Apps",
   "license": "MIT",
   "repository": {
