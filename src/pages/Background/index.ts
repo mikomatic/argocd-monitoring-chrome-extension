@@ -4,7 +4,6 @@ import {
   ArgoEnvironmentConfiguration,
   GlobalStatus
 } from "../Model/model";
-import {Application} from "@kubernetes-models/argo-cd/argoproj.io/v1alpha1";
 
 let argoEnvironmentConfiguration: ArgoEnvironmentConfiguration;
 
@@ -38,8 +37,7 @@ async function refreshApplicationsState() {
 
     let previousStatus = await loadArgoApplicationStatus().then(async (result: any) => {
       if (result && result.argoApplications) {
-        let argoApplications = result.argoApplications as ApplicationsForEnv[];
-        return argoApplications;
+        return result.argoApplications as ApplicationsForEnv[];
       }
     });
 
@@ -88,16 +86,71 @@ async function refreshApplicationsState() {
 
 function notifyBrowser(previousApplicationStatus: ApplicationsForEnv[], applicationStatus: ApplicationsForEnv[]) {
 
+  let globalStatus = GlobalStatus.UNKNOWN;
+  if (applicationStatus) {
+
+    for (const applicationsForEnv of applicationStatus) {
+      let currentStatus = calculateStatusForEnv(applicationsForEnv);
+
+      const currentEnvStatus = currentStatus[0];
+      const currentAppsStatus = currentStatus[1];
+      if (currentEnvStatus !== GlobalStatus.OK || currentAppsStatus !== GlobalStatus.OK) {
+        globalStatus = GlobalStatus.KO
+      }
+
+      const previousApplicationsForEnv = previousApplicationStatus.find(value => value.name === applicationsForEnv.name);
+      const previousStatus = calculateStatusForEnv(previousApplicationsForEnv);
+      let previousEnvStatus = previousStatus[0];
+
+      const newEnvStatusFailed = (previousEnvStatus === GlobalStatus.OK || previousEnvStatus === GlobalStatus.UNKNOWN) && currentEnvStatus !== GlobalStatus.OK;
+
+      if (newEnvStatusFailed) {
+        chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL("/icon-144.png"),
+          title: 'ArgoCD Environment Status',
+          message: `Impossible to contact ${applicationsForEnv.name} Argo Environment`,
+          priority: 2
+        })
+      }
+
+      let previousAppStatus = previousStatus[1];
+      const newAppStatusFailed = (previousAppStatus === GlobalStatus.OK || previousAppStatus === GlobalStatus.UNKNOWN) && currentAppsStatus !== GlobalStatus.OK;
+      if (newAppStatusFailed) {
+        chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL("/icon-144.png"),
+          title: 'ArgoCD Applications Status',
+          message: `Some applications require your attention in ${applicationsForEnv.name}  `,
+          priority: 2
+        })
+      }
+
+      const newAppStatusPK = (previousAppStatus === GlobalStatus.KO || previousAppStatus === GlobalStatus.UNKNOWN) && currentAppsStatus === GlobalStatus.OK;
+      if (newAppStatusPK) {
+        chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL("/icon-144.png"),
+          title: 'ArgoCD Applications Status',
+          message: `Everything went back to normal in env ${applicationsForEnv.name}  `,
+          priority: 2
+        })
+      }
+    }
+
+    if (globalStatus !== GlobalStatus.KO) {
+      globalStatus = GlobalStatus.OK;
+    }
+
+  }
 
   let previousStatus = calculateStatus(previousApplicationStatus);
   let currentStatus = calculateStatus(applicationStatus);
 
-  let currentEnvStatus = currentStatus[0];
-  let currentAppsStatus = currentStatus[1];
 
   console.log("previous status" + previousStatus)
   console.log("current" + currentStatus)
-  if (currentEnvStatus !== GlobalStatus.OK || currentAppsStatus !== GlobalStatus.OK) {
+  if (globalStatus !== GlobalStatus.OK) {
 
     chrome.action.setIcon(
         {
@@ -106,28 +159,6 @@ function notifyBrowser(previousApplicationStatus: ApplicationsForEnv[], applicat
           }
         }
     )
-
-    let previousEnvStatus = previousStatus[0];
-    if ((previousEnvStatus === GlobalStatus.OK || previousEnvStatus === GlobalStatus.UNKNOWN) && currentEnvStatus !== GlobalStatus.OK) {
-      chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL("/icon-144.png"),
-        title: 'ArgoCD Environment Status',
-        message: 'Impossible to contact some Argo Environments',
-        priority: 2
-      })
-    } else {
-      let previousAppStatus = previousStatus[1];
-      if ((previousAppStatus === GlobalStatus.OK || previousAppStatus === GlobalStatus.UNKNOWN) && currentAppsStatus !== GlobalStatus.OK) {
-        chrome.notifications.create('ARGO_ENV_NOTIFICATION_ID', {
-          type: 'basic',
-          iconUrl: chrome.runtime.getURL("/icon-144.png"),
-          title: 'ArgoCD Applications Status',
-          message: 'Some applications require your attention',
-          priority: 2
-        })
-      }
-    }
 
   } else {
     chrome.action.setIcon(
@@ -141,6 +172,33 @@ function notifyBrowser(previousApplicationStatus: ApplicationsForEnv[], applicat
 
 
 }
+
+
+const calculateStatusForEnv = (applicationStatusForEnv: ApplicationsForEnv | undefined) => {
+  let envStatus = GlobalStatus.UNKNOWN;
+  let appStatus = GlobalStatus.UNKNOWN;
+  if (applicationStatusForEnv) {
+    envStatus = applicationStatusForEnv.status;
+
+    if (applicationStatusForEnv.apps) {
+      let foundError: boolean = false;
+      for (const argoApp of applicationStatusForEnv.apps) {
+
+        if (argoApp.status?.health?.status !== "Healthy" || argoApp.status?.sync?.status !== "Synced") {
+          foundError = true;
+          break
+        }
+      }
+
+      if (foundError) {
+        appStatus = GlobalStatus.KO
+      } else {
+        appStatus = GlobalStatus.OK
+      }
+    }
+  }
+  return [envStatus, appStatus];
+};
 const calculateStatus = (applicationStatus: ApplicationsForEnv[]) => {
   let envStatus = GlobalStatus.UNKNOWN;
   let appStatus = GlobalStatus.UNKNOWN;
