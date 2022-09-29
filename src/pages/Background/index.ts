@@ -11,7 +11,7 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("onInstalled...");
 
   // create alarm after extension is installed / upgraded
-  chrome.alarms.create("refreshArgoCD", {periodInMinutes: 0.5});
+  chrome.alarms.create("refreshArgoCD", {periodInMinutes: 0.75});
   loadConfiguration().then(async (result: any) => {
     console.log("background - loaded config" + JSON.stringify(result));
 
