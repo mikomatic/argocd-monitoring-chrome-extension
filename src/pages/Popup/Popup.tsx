@@ -17,12 +17,25 @@ const Popup = () => {
         let argoApplications = result.argoApplications as ApplicationsForEnv[];
 
         setArgoApplications(argoApplications);
-        setCurrentEnv(argoApplications[0])
       } else {
         console.log("No stored configuration");
       }
     });
   }, []);
+
+  useEffect(() => {
+    const storedEnv = JSON.parse(localStorage.getItem('currentEnv') ?? "");
+    if (storedEnv) {
+      setCurrentEnv(storedEnv);
+    } else {
+      setCurrentEnv(argoApplications[0])
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('currentEnv', JSON.stringify(currentEnv ?? ""));
+  }, [currentEnv]);
+
 
   const showStatus = (status: GlobalStatus) => {
     if (status === GlobalStatus.KO) {
@@ -72,12 +85,13 @@ const Popup = () => {
     const appList = argoApplications.filter(argoApps => argoApps.name === currentEnv?.name)
     .flatMap(argoApplications => argoApplications.apps);
 
-    if (appList.length === 0) {
+    if (appList.length === 0 || !currentEnv) {
       return <p>No apps configured or reachable</p>
     }
     return appList
     .map((application: Application) => {
-      return <ArgoApplicationRow currentEnv={currentEnv} currentApp={application}/>
+      return <ArgoApplicationRow key={currentEnv.name + application.metadata.name}
+                                 currentEnv={currentEnv} currentApp={application}/>
     });
   };
 
