@@ -27,8 +27,8 @@ jobs:
     - name: zip artifact
       uses: montudor/action-zip@v1
       with:
-        args: zip -qq -r argocd-monitoring-chrome-extension${GITHUB_REF#refs/tags/}.zip build
+        args: zip -qq -r argocd-monitoring-chrome-extension-${{  github.ref_name }}.zip build
     - name: release
       uses: softprops/action-gh-release@v1
       with:
-        files: argocd-monitoring-chrome-extension${GITHUB_REF#refs/tags/}.zip
+        files: argocd-monitoring-chrome-extension-${{  github.ref_name }}.zip
