@@ -44,6 +44,10 @@ const ArgoApplicationRow = ({currentEnv, currentApp}: Props) => {
       return <span className="icon" style={{color: "#ced4da"}}><i
           className="material-icons">radio_button_unchecked</i>
         {status}</span>
+    } else if (status === "OutOfSync") {
+      return <span className="icon" style={{color: "#fab005"}}><i
+          className="material-icons">arrow_upward</i>
+        {status}</span>
     } else if (status === "Healthy") {
       return <span className="icon" style={{color: "#12b886"}}><i
           className="material-icons">favorite</i>
