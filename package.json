@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@hot-loader/react-dom": "^17.0.2",
-    "@kubernetes-models/argo-cd": "^1.1.0",
+    "@kubernetes-models/argo-cd": "^2.0.2",
     "bulma": "^0.9.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
